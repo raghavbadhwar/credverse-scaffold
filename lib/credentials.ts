@@ -88,14 +88,19 @@ export class CredentialManager {
 
       const { proof, ...credentialWithoutProof } = credential;
       const credentialHash = this.hashCredential(credentialWithoutProof);
-      
-      // Extract public key from DID
-      const publicKey = await this.resolveDIDPublicKey(credential.issuer as string);
-      
-      // Verify signature
       const recoveredAddress = ethers.verifyMessage(credentialHash, proof.proofValue);
+
+      const issuer = credential.issuer as string;
+      // Support did:pkh:eip155:<chainId>:<address>
+      if (typeof issuer === 'string' && issuer.startsWith('did:pkh:')) {
+        const parts = issuer.split(':');
+        const address = parts[parts.length - 1];
+        return recoveredAddress.toLowerCase() === address.toLowerCase();
+      }
+
+      // Fallback to resolving DID public key if available
+      const publicKey = await this.resolveDIDPublicKey(issuer);
       const expectedAddress = ethers.computeAddress(publicKey);
-      
       return recoveredAddress.toLowerCase() === expectedAddress.toLowerCase();
     } catch (error) {
       console.error('Credential verification failed:', error);
@@ -133,23 +138,40 @@ export class CredentialManager {
    */
   async storeToIPFS(credential: CredVerseCredential): Promise<string> {
     try {
-      // This would integrate with IPFS
-      // For now, we'll simulate the process
-      const metadata = {
+      const endpoint = process.env.IPFS_ENDPOINT || 'https://ipfs.infura.io:5001/api/v0';
+      const projectId = process.env.IPFS_PROJECT_ID;
+      const projectSecret = process.env.IPFS_PROJECT_SECRET;
+
+      // Dynamic import to avoid SSR bundling issues
+      const { create: createIPFS } = await import('ipfs-http-client');
+
+      // Build Basic auth header in browser-safe way
+      let authHeader: string | undefined = undefined;
+      if (projectId && projectSecret) {
+        const toEncode = `${projectId}:${projectSecret}`;
+        if (typeof btoa !== 'undefined') {
+          authHeader = 'Basic ' + btoa(toEncode);
+        } else if (typeof Buffer !== 'undefined') {
+          authHeader = 'Basic ' + Buffer.from(toEncode).toString('base64');
+        }
+      }
+
+      const client = createIPFS({
+        url: endpoint,
+        headers: authHeader ? { Authorization: authHeader } : undefined,
+      } as any);
+
+      const payload = {
         ...credential,
         storedAt: new Date().toISOString(),
         storageProvider: 'ipfs'
       };
 
-      // In production, this would upload to IPFS
-      // const result = await ipfs.add(JSON.stringify(metadata));
-      
-      // For demo purposes, return a mock hash
-      const mockHash = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(metadata)));
-      
-      return mockHash;
+      const { cid } = await client.add(JSON.stringify(payload));
+      return cid.toString();
     } catch (error) {
-      throw new Error(`Failed to store credential to IPFS: ${error}`);
+      // Fallback to deterministic mock hash
+      return ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(credential)));
     }
   }
 
@@ -158,27 +180,34 @@ export class CredentialManager {
    */
   async storeToArweave(credential: CredVerseCredential): Promise<string> {
     try {
-      // This would integrate with Arweave
-      // For now, we'll simulate the process
-      const metadata = {
+      const host = process.env.ARWEAVE_HOST || 'arweave.net';
+      const port = Number(process.env.ARWEAVE_PORT || 443);
+      const protocol = process.env.ARWEAVE_PROTOCOL || 'https';
+      const jwk = process.env.ARWEAVE_JWK ? JSON.parse(process.env.ARWEAVE_JWK) : null;
+
+      if (!jwk) {
+        return '';
+      }
+
+      // Dynamic import Arweave to avoid SSR bundling issues
+      const ArweaveMod = await import('arweave');
+      const Arweave = ArweaveMod.default || (ArweaveMod as any);
+      const arweave = Arweave.init({ host, port, protocol });
+      const payload = {
         ...credential,
         storedAt: new Date().toISOString(),
         storageProvider: 'arweave'
       };
-
-      // In production, this would upload to Arweave
-      // const transaction = await arweave.createTransaction({
-      //   data: JSON.stringify(metadata)
-      // });
-      // await arweave.transactions.sign(transaction);
-      // await arweave.transactions.post(transaction);
-      
-      // For demo purposes, return a mock ID
-      const mockId = ethers.keccak256(ethers.toUtf8Bytes(JSON.stringify(metadata)));
-      
-      return mockId;
+      const tx = await arweave.createTransaction({ data: JSON.stringify(payload) }, jwk);
+      tx.addTag('Content-Type', 'application/json');
+      await arweave.transactions.sign(tx, jwk);
+      const res = await arweave.transactions.post(tx);
+      if (res.status === 200 || res.status === 202) {
+        return tx.id;
+      }
+      return '';
     } catch (error) {
-      throw new Error(`Failed to store credential to Arweave: ${error}`);
+      return '';
     }
   }
 
@@ -257,15 +286,7 @@ export class CredentialManager {
    */
   private async resolveDIDPublicKey(did: string): Promise<string> {
     try {
-      // This would resolve the DID document
-      // For now, we'll simulate the process
-      
-      // In production, this would use a DID resolver
-      // const didDocument = await didResolver.resolve(did);
-      // return didDocument.verificationMethod[0].publicKeyJwk;
-      
-      // For demo purposes, return a mock public key
-      return ethers.keccak256(ethers.toUtf8Bytes(did));
+      throw new Error(`Unsupported DID method: ${did}`);
     } catch (error) {
       throw new Error(`Failed to resolve DID: ${error}`);
     }

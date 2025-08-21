@@ -7,26 +7,30 @@ async function main() {
 
   // Get the deployer account
   const [deployer] = await ethers.getSigners();
-  console.log("📝 Deploying contracts with account:", deployer.address);
+  const deployerAddress = await deployer.getAddress();
+  console.log("📝 Deploying contracts with account:", deployerAddress);
   console.log("💰 Account balance:", (await deployer.getBalance()).toString(), "\n");
 
   // Get network information
   const network = await ethers.provider.getNetwork();
+  const chainId = typeof network.chainId === 'bigint' ? Number(network.chainId) : network.chainId;
   console.log("🌐 Network:", network.name);
-  console.log("🔗 Chain ID:", network.chainId, "\n");
+  console.log("🔗 Chain ID:", chainId, "\n");
 
   // Deploy CredentialRegistry contract
   console.log("📜 Deploying CredentialRegistry contract...");
   const CredentialRegistry = await ethers.getContractFactory("CredentialRegistry");
   const credentialRegistry = await CredentialRegistry.deploy();
-  await credentialRegistry.deployed();
+  await credentialRegistry.waitForDeployment();
+  const contractAddress = credentialRegistry.target;
+  const deployTx = credentialRegistry.deploymentTransaction();
 
-  console.log("✅ CredentialRegistry deployed to:", credentialRegistry.address);
-  console.log("📋 Transaction hash:", credentialRegistry.deployTransaction.hash, "\n");
+  console.log("✅ CredentialRegistry deployed to:", contractAddress);
+  console.log("📋 Transaction hash:", deployTx.hash, "\n");
 
   // Wait for a few block confirmations
   console.log("⏳ Waiting for block confirmations...");
-  await credentialRegistry.deployTransaction.wait(5);
+  const receipt = await deployTx.wait(5);
   console.log("✅ Contract confirmed on blockchain\n");
 
   // Get contract information
@@ -36,27 +40,30 @@ async function main() {
   console.log("📋 Contract Details:");
   console.log("   Name:", contractName);
   console.log("   Version:", contractVersion);
-  console.log("   Address:", credentialRegistry.address, "\n");
+  console.log("   Address:", contractAddress, "\n");
 
   // Get initial contract stats
   const stats = await credentialRegistry.getContractStats();
+  const totalCredentials = stats[0];
+  const totalIssuers = stats[1];
+  const totalVerifiers = stats[2];
   console.log("📊 Initial Contract Statistics:");
-  console.log("   Total Credentials:", stats.totalCredentials.toString());
-  console.log("   Total Issuers:", stats.totalIssuers.toString());
-  console.log("   Total Verifiers:", stats.totalVerifiers.toString(), "\n");
+  console.log("   Total Credentials:", totalCredentials.toString());
+  console.log("   Total Issuers:", totalIssuers.toString());
+  console.log("   Total Verifiers:", totalVerifiers.toString(), "\n");
 
   // Check deployer roles
   const hasAdminRole = await credentialRegistry.hasRole(
     await credentialRegistry.ADMIN_ROLE(),
-    deployer.address
+    deployerAddress
   );
   const hasIssuerRole = await credentialRegistry.hasRole(
     await credentialRegistry.ISSUER_ROLE(),
-    deployer.address
+    deployerAddress
   );
   const hasVerifierRole = await credentialRegistry.hasRole(
     await credentialRegistry.VERIFIER_ROLE(),
-    deployer.address
+    deployerAddress
   );
 
   console.log("🔐 Deployer Roles:");
@@ -67,17 +74,17 @@ async function main() {
   // Save deployment information
   const deploymentInfo = {
     network: network.name,
-    chainId: network.chainId,
-    deployer: deployer.address,
+    chainId,
+    deployer: deployerAddress,
     contracts: {
       CredentialRegistry: {
-        address: credentialRegistry.address,
+        address: contractAddress,
         name: contractName,
         version: contractVersion,
-        transactionHash: credentialRegistry.deployTransaction.hash,
-        blockNumber: credentialRegistry.deployTransaction.blockNumber,
-        gasUsed: credentialRegistry.deployTransaction.gasLimit.toString(),
-        deployer: deployer.address,
+        transactionHash: deployTx.hash,
+        blockNumber: receipt.blockNumber,
+        gasUsed: (receipt.gasUsed || 0n).toString(),
+        deployer: deployerAddress,
         timestamp: new Date().toISOString(),
         roles: {
           admin: hasAdminRole,
@@ -100,7 +107,7 @@ async function main() {
   }
 
   // Save deployment info to file
-  const deploymentFile = path.join(deploymentsDir, `${network.name}-${network.chainId}.json`);
+  const deploymentFile = path.join(deploymentsDir, `${network.name}-${chainId}.json`);
   fs.writeFileSync(deploymentFile, JSON.stringify(deploymentInfo, null, 2));
   console.log("💾 Deployment information saved to:", deploymentFile);
 
@@ -113,20 +120,20 @@ async function main() {
     if (envContent.includes("NEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS=")) {
       envContent = envContent.replace(
         /NEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS=.*/,
-        `NEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS="${credentialRegistry.address}"`
+        `NEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS="${contractAddress}"`
       );
     } else {
-      envContent += `\nNEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS="${credentialRegistry.address}"\n`;
+      envContent += `\nNEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS="${contractAddress}"\n`;
     }
 
     // Update or add network ID
     if (envContent.includes("NEXT_PUBLIC_NETWORK_ID=")) {
       envContent = envContent.replace(
         /NEXT_PUBLIC_NETWORK_ID=.*/,
-        `NEXT_PUBLIC_NETWORK_ID="${network.chainId}"`
+        `NEXT_PUBLIC_NETWORK_ID="${chainId}"`
       );
     } else {
-      envContent += `NEXT_PUBLIC_NETWORK_ID="${network.chainId}"\n`;
+      envContent += `NEXT_PUBLIC_NETWORK_ID="${chainId}"\n`;
     }
 
     fs.writeFileSync(envFile, envContent);
@@ -134,11 +141,11 @@ async function main() {
   }
 
   // Verify contract on block explorer (if not local network)
-  if (network.chainId !== 31337) {
+  if (chainId !== 31337) {
     console.log("\n🔍 Verifying contract on block explorer...");
     try {
       await hre.run("verify:verify", {
-        address: credentialRegistry.address,
+        address: contractAddress,
         constructorArguments: [],
       });
       console.log("✅ Contract verified successfully!");
@@ -153,10 +160,10 @@ async function main() {
   console.log("🎉 DEPLOYMENT COMPLETED SUCCESSFULLY!");
   console.log("=".repeat(60));
   console.log("📋 Contract: CredentialRegistry");
-  console.log("📍 Address:", credentialRegistry.address);
+  console.log("📍 Address:", contractAddress);
   console.log("🌐 Network:", network.name);
-  console.log("🔗 Chain ID:", network.chainId);
-  console.log("👤 Deployer:", deployer.address);
+  console.log("🔗 Chain ID:", chainId);
+  console.log("👤 Deployer:", deployerAddress);
   console.log("⏰ Timestamp:", new Date().toISOString());
   console.log("=".repeat(60));
 

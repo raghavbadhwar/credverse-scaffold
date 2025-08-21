@@ -47,7 +47,7 @@ export default function IssuerPage() {
       const credHash = computeCredentialHash(signed);
       const receipt = await anchorCredentialOnChain(credHash, signed.id, ipfsHash, arweaveId);
 
-      setTxHash(receipt.transactionHash);
+      setTxHash((receipt as any).hash || '');
       setIssued({
         ...signed,
         metadata: { ...signed.metadata, ipfsHash, arweaveId, blockchainHash: credHash }

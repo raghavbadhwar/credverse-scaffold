@@ -1,7 +1,7 @@
 # 🌐 CredVerse - Protocol-Grade Credential Infrastructure
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
-[![CI](https://github.com/raghavbadhwar/credverse-scaffold/actions/workflows/main.yml/badge.svg)](https://github.com/raghavbadhwar/credverse-scaffold/actions/workflows/main.yml)
+[![CI](https://github.com/raghavbadhwar/credverse-scaffold/actions/workflows/ci.yml/badge.svg)](https://github.com/raghavbadhwar/credverse-scaffold/actions/workflows/ci.yml)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.2-blue.svg)](https://www.typescriptlang.org/)
 [![Next.js](https://img.shields.io/badge/Next.js-14.0-black.svg)](https://nextjs.org/)
 [![Polygon](https://img.shields.io/badge/Polygon-2.0-purple.svg)](https://polygon.technology/)
@@ -134,6 +134,11 @@ npm run contract:compile
 npm run contract:deploy
 ```
 
+#### Configure for Amoy
+- Set `PRIVATE_KEY`, `POLYGON_AMOY_RPC_URL`, `POLYGONSCAN_API_KEY` in `.env`
+- Ensure your wallet has Amoy test MATIC for gas
+- After deployment, `.env` will be updated with `NEXT_PUBLIC_CREDENTIAL_REGISTRY_ADDRESS`
+
 ### 6. Start Development Server
 ```bash
 npm run dev
@@ -200,6 +205,12 @@ npm start
 ```bash
 # Deploy to Polygon Mainnet
 npm run contract:deploy --network polygon
+```
+
+### Verifying on Polygonscan (Amoy)
+The deploy script auto-verifies if `POLYGONSCAN_API_KEY` is set. To verify manually:
+```bash
+npx hardhat verify --network polygon-amoy <DEPLOYED_ADDRESS>
 ```
 
 ### Database Migration
