@@ -1,0 +1,474 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User model for all types of users
+model User {
+  id             String   @id @default(cuid())
+  email          String   @unique
+  name           String
+  role           UserRole
+  passwordHash   String?
+  did            String?  @unique
+  walletAddress  String?  @unique
+  institutionId  String?
+  
+  // Profile information
+  avatar         String?
+  bio            String?
+  phone          String?
+  location       String?
+  
+  // Preferences
+  language       String   @default("en")
+  timezone       String   @default("UTC")
+  emailNotifications Boolean @default(true)
+  pushNotifications Boolean @default(true)
+  smsNotifications Boolean @default(false)
+  profileVisibility ProfileVisibility @default("connections")
+  credentialVisibility CredentialVisibility @default("selective")
+  
+  // Timestamps
+  createdAt      DateTime @default(now())
+  updatedAt      DateTime @updatedAt
+  lastLoginAt    DateTime?
+  
+  // Relations
+  institution    Institution? @relation(fields: [institutionId], references: [id])
+  issuedCredentials Credential[] @relation("Issuer")
+  receivedCredentials Credential[] @relation("Recipient")
+  verificationRequests VerificationRequest[] @relation("Verifier")
+  auditLogs     AuditLog[]
+  
+  // Indexes
+  @@index([email])
+  @@index([role])
+  @@index([institutionId])
+  @@index([did])
+  @@index([walletAddress])
+}
+
+// Institution model
+model Institution {
+  id            String   @id @default(cuid())
+  name          String
+  type          InstitutionType
+  did           String   @unique
+  domain        String   @unique
+  logo          String?
+  website       String
+  
+  // Address
+  street        String
+  city          String
+  state         String
+  country       String   @default("India")
+  postalCode    String
+  
+  // Contact
+  contactEmail  String
+  contactPhone  String?
+  
+  // Accreditation
+  naacRating    String?
+  ugcApproved   Boolean  @default(false)
+  aicteApproved Boolean  @default(false)
+  isoCertified  Boolean  @default(false)
+  
+  // Settings
+  whiteLabeling WhiteLabelingSettings?
+  integrations  IntegrationSettings?
+  security      SecuritySettings?
+  
+  // Timestamps
+  createdAt     DateTime @default(now())
+  updatedAt     DateTime @updatedAt
+  
+  // Relations
+  users         User[]
+  credentials   Credential[]
+  templates     CredentialTemplate[]
+  webhooks      Webhook[]
+  
+  // Indexes
+  @@index([type])
+  @@index([country])
+  @@index([domain])
+}
+
+// Credential model
+model Credential {
+  id                String   @id @default(cuid())
+  credentialId      String   @unique // W3C credential ID
+  type              CredentialType[]
+  category          CredentialCategory
+  level             CredentialLevel
+  
+  // Subject information
+  studentId         String
+  studentName       String
+  studentEmail      String
+  programName       String
+  institutionName   String
+  graduationDate    DateTime
+  gpa               Float?
+  major             String?
+  minor             String?
+  honors            String[]
+  
+  // Metadata
+  version           String   @default("1.0.0")
+  language          String   @default("en")
+  region            String   @default("IN")
+  tags              String[]
+  
+  // Blockchain and storage
+  blockchainHash    String?  @unique
+  ipfsHash         String?
+  arweaveId        String?
+  templateId       String
+  
+  // Compliance
+  gdprCompliant    Boolean  @default(true)
+  dpdpCompliant    Boolean  @default(true)
+  naacCompliant    Boolean  @default(false)
+  ugcCompliant     Boolean  @default(false)
+  aicteCompliant   Boolean  @default(false)
+  
+  // Status
+  status            CredentialStatus @default("active")
+  revokedAt         DateTime?
+  revocationReason  String?
+  
+  // Timestamps
+  issuedAt          DateTime @default(now())
+  expiresAt         DateTime?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  issuer            User     @relation("Issuer", fields: [issuerId], references: [id])
+  issuerId          String
+  recipient         User     @relation("Recipient", fields: [recipientId], references: [id])
+  recipientId       String
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String
+  template          CredentialTemplate @relation(fields: [templateId], references: [id])
+  verifications     VerificationRequest[]
+  achievements      Achievement[]
+  skills            Skill[]
+  
+  // Indexes
+  @@index([credentialId])
+  @@index([studentId])
+  @@index([studentEmail])
+  @@index([issuerId])
+  @@index([recipientId])
+  @@index([institutionId])
+  @@index([category])
+  @@index([status])
+  @@index([issuedAt])
+  @@index([expiresAt])
+}
+
+// Credential template model
+model CredentialTemplate {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  type              CredentialType[]
+  category          CredentialCategory
+  level             CredentialLevel
+  
+  // Design
+  design            Json     // Template design configuration
+  logo              String?
+  seal              String?
+  colors            Json?    // Custom color scheme
+  
+  // Fields
+  requiredFields    String[] // Required credential fields
+  optionalFields    String[] // Optional credential fields
+  
+  // Settings
+  isActive          Boolean  @default(true)
+  allowCustomization Boolean @default(false)
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  
+  // Relations
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String
+  credentials       Credential[]
+  
+  // Indexes
+  @@index([institutionId])
+  @@index([category])
+  @@index([isActive])
+}
+
+// Achievement model
+model Achievement {
+  id                String   @id @default(cuid())
+  name              String
+  description       String?
+  category          String
+  date              DateTime
+  
+  // Relations
+  credential        Credential @relation(fields: [credentialId], references: [id])
+  credentialId      String
+  
+  // Indexes
+  @@index([credentialId])
+  @@index([category])
+}
+
+// Skill model
+model Skill {
+  id                String   @id @default(cuid())
+  name              String
+  level             SkillLevel
+  category          String
+  verified          Boolean  @default(false)
+  
+  // Relations
+  credential        Credential @relation(fields: [credentialId], references: [id])
+  credentialId      String
+  
+  // Indexes
+  @@index([credentialId])
+  @@index([category])
+  @@index([level])
+}
+
+// Verification request model
+model VerificationRequest {
+  id                String   @id @default(cuid())
+  credentialId      String
+  verifierId        String
+  status            VerificationStatus @default("pending")
+  
+  // Verification details
+  verificationMethod String?
+  verificationNotes  String?
+  verifiedAt        DateTime?
+  
+  // Timestamps
+  requestedAt       DateTime @default(now())
+  completedAt       DateTime?
+  
+  // Relations
+  credential        Credential @relation(fields: [credentialId], references: [id])
+  verifier          User     @relation("Verifier", fields: [verifierId], references: [id])
+  
+  // Indexes
+  @@index([credentialId])
+  @@index([verifierId])
+  @@index([status])
+  @@index([requestedAt])
+}
+
+// Webhook model for integrations
+model Webhook {
+  id                String   @id @default(cuid())
+  url               String
+  events            String[] // Events to trigger webhook
+  secret            String
+  isActive          Boolean  @default(true)
+  
+  // Settings
+  retryCount        Int      @default(3)
+  timeout           Int      @default(30000) // milliseconds
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+  lastTriggeredAt   DateTime?
+  
+  // Relations
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String
+  
+  // Indexes
+  @@index([institutionId])
+  @@index([isActive])
+}
+
+// Audit log model
+model AuditLog {
+  id                String   @id @default(cuid())
+  userId            String
+  action            String
+  resource          String
+  resourceId        String?
+  details           Json?
+  ipAddress         String?
+  userAgent         String?
+  
+  // Timestamps
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  user              User     @relation(fields: [userId], references: [id])
+  
+  // Indexes
+  @@index([userId])
+  @@index([action])
+  @@index([resource])
+  @@index([createdAt])
+}
+
+// Enums
+enum UserRole {
+  ADMIN
+  REGISTRAR
+  FACULTY
+  OPERATOR
+  STUDENT
+  RECRUITER
+  VERIFIER
+}
+
+enum InstitutionType {
+  UNIVERSITY
+  COLLEGE
+  SCHOOL
+  TRAINING_INSTITUTE
+  CORPORATE
+  GOVERNMENT
+  OTHER
+}
+
+enum CredentialType {
+  DEGREE
+  DIPLOMA
+  CERTIFICATE
+  BADGE
+  TRANSCRIPT
+  MICROCREDENTIAL
+  SKILL_CERTIFICATION
+  ACHIEVEMENT
+  OTHER
+}
+
+enum CredentialCategory {
+  FOUNDATIONAL
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+  DOCTORAL
+  POSTDOCTORAL
+}
+
+enum CredentialLevel {
+  FOUNDATIONAL
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+  DOCTORAL
+  POSTDOCTORAL
+}
+
+enum CredentialStatus {
+  ACTIVE
+  EXPIRED
+  REVOKED
+  SUSPENDED
+}
+
+enum SkillLevel {
+  BEGINNER
+  INTERMEDIATE
+  ADVANCED
+  EXPERT
+}
+
+enum VerificationStatus {
+  PENDING
+  VERIFIED
+  REJECTED
+  EXPIRED
+}
+
+enum ProfileVisibility {
+  PUBLIC
+  PRIVATE
+  CONNECTIONS
+}
+
+enum CredentialVisibility {
+  PUBLIC
+  PRIVATE
+  SELECTIVE
+}
+
+// White labeling settings
+model WhiteLabelingSettings {
+  id                String   @id @default(cuid())
+  customLogo        Boolean  @default(false)
+  customDomain      Boolean  @default(false)
+  customColors      Boolean  @default(false)
+  customSeal        Boolean  @default(false)
+  
+  // Relations
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String   @unique
+  
+  // Indexes
+  @@index([institutionId])
+}
+
+// Integration settings
+model IntegrationSettings {
+  id                String   @id @default(cuid())
+  
+  // ERP integrations
+  sapEnabled        Boolean  @default(false)
+  sapConfig         Json?
+  tcsIonEnabled     Boolean  @default(false)
+  tcsIonConfig      Json?
+  oracleEnabled     Boolean  @default(false)
+  oracleConfig      Json?
+  
+  // LMS integrations
+  moodleEnabled     Boolean  @default(false)
+  moodleConfig      Json?
+  canvasEnabled     Boolean  @default(false)
+  canvasConfig      Json?
+  blackboardEnabled Boolean  @default(false)
+  blackboardConfig  Json?
+  
+  // Relations
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String   @unique
+  
+  // Indexes
+  @@index([institutionId])
+}
+
+// Security settings
+model SecuritySettings {
+  id                String   @id @default(cuid())
+  mfaEnabled        Boolean  @default(false)
+  ipWhitelist       String[]
+  sessionTimeout    Int      @default(3600) // seconds
+  auditLogging      Boolean  @default(true)
+  
+  // Relations
+  institution       Institution @relation(fields: [institutionId], references: [id])
+  institutionId     String   @unique
+  
+  // Indexes
+  @@index([institutionId])
+}
