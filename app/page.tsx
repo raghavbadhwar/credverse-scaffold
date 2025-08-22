@@ -117,7 +117,7 @@ function NavBar() {
   return (
     <div className="sticky top-0 z-50 backdrop-blur supports-[backdrop-filter]:bg-white/70 dark:supports-[backdrop-filter]:bg-slate-950/70 border-b border-slate-200 dark:border-slate-800/60">
       <div className="mx-auto max-w-7xl px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
-        <a href="#home" className="flex items-center gap-2 text-slate-900 dark:text-white no-underline">
+        <a href="/" className="flex items-center gap-2 text-slate-900 dark:text-white no-underline">
           <LogoCV size={28} />
           <span className="font-semibold tracking-tight text-lg">CredVerse</span>
         </a>
@@ -130,8 +130,8 @@ function NavBar() {
         </nav>
         <div className="flex items-center gap-2">
           <ThemeToggle />
-          <Button variant="ghost" className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Docs</Button>
-          <Button className="rounded-2xl">
+          <Button variant="ghost" onClick={() => window.open('/docs', '_blank')} className="text-blue-500 dark:text-blue-400 hover:text-blue-600 dark:hover:text-blue-300">Docs</Button>
+          <Button className="rounded-2xl" onClick={() => window.location.href = '/issuer'}>
             <span className="flex items-center gap-1">Request a Demo <ArrowRight className="h-4 w-4"/></span>
           </Button>
         </div>
@@ -162,10 +162,10 @@ function Hero() {
             <h1 className="text-4xl md:text-6xl font-bold tracking-tight">India's trust layer for education credentials.</h1>
             <p className="text-slate-600 dark:text-slate-400 text-lg leading-relaxed">Issue tamper‑proof degrees, store them in student wallets, and verify in seconds—QR or API. Built on open standards (DID + VC), with zk‑proofs and PoP integrations.</p>
             <div className="flex flex-wrap gap-3">
-              <Button size="lg" className="rounded-2xl">
+              <Button size="lg" className="rounded-2xl" onClick={() => window.location.href = '/issuer'}>
                 <span className="flex items-center gap-2">Start Pilot <ArrowRight className="h-4 w-4" /></span>
               </Button>
-              <Button size="lg" variant="secondary" className="rounded-2xl">
+              <Button size="lg" variant="secondary" className="rounded-2xl" onClick={() => window.location.href = '/student'}>
                 Explore Product
               </Button>
             </div>
@@ -276,7 +276,11 @@ function ProductSuite() {
                       </li>
                     ))}
                   </ul>
-                  <Button variant="secondary" className="rounded-2xl">{p.cta}</Button>
+                  <Button variant="secondary" className="rounded-2xl" onClick={() => {
+                    if (p.name === "Issuer Dashboard") window.location.href = '/issuer';
+                    else if (p.name === "Student Wallet") window.location.href = '/student';
+                    else if (p.name === "Recruiter Verify") window.location.href = '/verifier';
+                  }}>{p.cta}</Button>
                 </div>
               </Card>
             </motion.div>
