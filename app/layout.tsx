@@ -1,3 +1,4 @@
+import React from 'react';
 import type { Metadata } from 'next';
 import { Inter } from 'next/font/google';
 import './globals.css';
@@ -5,6 +6,7 @@ import './globals.css';
 const inter = Inter({ subsets: ['latin'] });
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL || 'http://localhost:3000'),
   title: 'CredVerse - Protocol-Grade Credential Infrastructure',
   description: 'India\'s first protocol-grade credential infrastructure for universities, students, and recruiters. W3C compliant, blockchain-anchored, and privacy-preserving.',
   keywords: 'credentials, blockchain, education, verifiable-credentials, india, polygon, w3c, did',
