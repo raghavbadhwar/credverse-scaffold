@@ -1,1 +1,0 @@
-self.__REACT_LOADABLE_MANIFEST='{"app/issuer/page.tsx -> ethers":{"id":9339,"files":["static/chunks/339.664f9c1b2ff4d382.js"]},"lib/credentials.ts -> arweave":{"id":7093,"files":["static/chunks/93.ad5dca961040adf3.js"]},"lib/credentials.ts -> ipfs-http-client":{"id":6283,"files":["static/chunks/283.7c59ac0fdc190fac.js","static/chunks/897.72c36935c59cbf06.js"]}}';
