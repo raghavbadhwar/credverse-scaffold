@@ -12,7 +12,7 @@ const ThemeContext = createContext({
   toggleTheme: () => {},
 });
 
-const ThemeProvider = ({ children }) => {
+const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
   const [theme, setTheme] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme');
@@ -40,7 +40,7 @@ const ThemeProvider = ({ children }) => {
 };
 
 // UI Components
-const Button = ({ variant, size, className, children, ...props }) => {
+const Button = ({ variant, size, className, children, ...props }: { variant?: 'primary' | 'secondary' | 'ghost'; size?: 'default' | 'lg' | 'icon'; className?: string; children: React.ReactNode; [key: string]: any }) => {
   const baseClasses = "inline-flex items-center justify-center rounded-lg text-sm font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-indigo-500 focus-visible:ring-offset-2 disabled:opacity-50 disabled:pointer-events-none ring-offset-white dark:ring-offset-slate-950";
   
   const variants = {
@@ -55,7 +55,7 @@ const Button = ({ variant, size, className, children, ...props }) => {
     icon: "h-10 w-10",
   };
 
-  const finalClassName = `${baseClasses} ${variants[variant] || variants.primary} ${sizes[size] || sizes.default} ${className || ''}`;
+  const finalClassName = `${baseClasses} ${variants[variant || 'primary']} ${sizes[size || 'default']} ${className || ''}`;
   
   return (
     <button className={finalClassName} {...props}>
@@ -64,11 +64,11 @@ const Button = ({ variant, size, className, children, ...props }) => {
   );
 };
 
-const Card = ({ className, children }) => (
-  <div className={`rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300 ${className}`}>{children}</div>
+const Card = ({ className, children }: { className?: string; children: React.ReactNode }) => (
+  <div className={`rounded-xl border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm transition-colors duration-300 ${className || ''}`}>{children}</div>
 );
 
-const Badge = ({ className, color, ...props }) => {
+const Badge = ({ className, color, ...props }: { className?: string; color?: 'indigo' | 'teal' | 'slate'; [key: string]: any }) => {
   const colors = {
     indigo: "bg-indigo-100 text-indigo-700 dark:bg-indigo-900/50 dark:text-indigo-300 border-indigo-200 dark:border-indigo-800",
     teal: "bg-teal-100 text-teal-700 dark:bg-teal-900/50 dark:text-teal-300 border-teal-200 dark:border-teal-800",
@@ -76,7 +76,7 @@ const Badge = ({ className, color, ...props }) => {
   };
   return (
     <div
-      className={`inline-flex items-center border rounded-full px-3 py-1 text-xs font-medium ${colors[color] || colors.slate} ${className}`}
+      className={`inline-flex items-center border rounded-full px-3 py-1 text-xs font-medium ${colors[color || 'slate']} ${className || ''}`}
       {...props}
     />
   );
