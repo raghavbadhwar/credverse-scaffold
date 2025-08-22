@@ -15,7 +15,7 @@
     "db:migrate": "prisma migrate dev",
     "db:studio": "prisma studio",
     "contract:compile": "hardhat compile",
-    "contract:deploy": "hardhat run scripts/deploy.js --network polygon",
+    "contract:deploy": "hardhat run scripts/deploy.js --network polygon-amoy",
     "contract:test": "hardhat test"
   },
   "keywords": [

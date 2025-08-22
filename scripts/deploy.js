@@ -9,7 +9,7 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   const deployerAddress = await deployer.getAddress();
   console.log("📝 Deploying contracts with account:", deployerAddress);
-  console.log("💰 Account balance:", (await deployer.getBalance()).toString(), "\n");
+  console.log("💰 Account balance:", (await ethers.provider.getBalance(deployerAddress)).toString(), "\n");
 
   // Get network information
   const network = await ethers.provider.getNetwork();

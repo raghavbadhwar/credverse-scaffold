@@ -1,0 +1,27 @@
+{
+  "network": "polygon-amoy",
+  "chainId": 80002,
+  "deployer": "0x22E1F60d47Ef53a4408E193320589D57C88BF7ff",
+  "contracts": {
+    "CredentialRegistry": {
+      "address": "0x8ce3f05fE9cE9D63dA4b9E80EE46C4df07C12BcE",
+      "name": "CredVerse Credential Registry",
+      "version": "2.0.0",
+      "transactionHash": "0x0735e49ec6cfa1677611f5c932c4b167caf22c2f26437af84d1b2cf60d0a661e",
+      "blockNumber": 25482522,
+      "gasUsed": "2607355",
+      "deployer": "0x22E1F60d47Ef53a4408E193320589D57C88BF7ff",
+      "timestamp": "2025-08-22T20:17:43.514Z",
+      "roles": {
+        "admin": true,
+        "issuer": true,
+        "verifier": true
+      }
+    }
+  },
+  "deployment": {
+    "timestamp": "2025-08-22T20:17:43.519Z",
+    "environment": "development",
+    "hardhatVersion": "2.26.3"
+  }
+}
