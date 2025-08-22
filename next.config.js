@@ -1,8 +1,6 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  experimental: {
-    appDir: true,
-  },
+  // appDir is now default in Next.js 14, no need to specify
   images: {
     domains: ['ipfs.io', 'arweave.net', 'gateway.pinata.cloud'],
     formats: ['image/webp', 'image/avif'],
