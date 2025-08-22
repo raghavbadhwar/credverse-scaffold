@@ -33,8 +33,8 @@ model User {
   emailNotifications Boolean @default(true)
   pushNotifications Boolean @default(true)
   smsNotifications Boolean @default(false)
-  profileVisibility ProfileVisibility @default("connections")
-  credentialVisibility CredentialVisibility @default("selective")
+  profileVisibility ProfileVisibility @default(CONNECTIONS)
+  credentialVisibility CredentialVisibility @default(SELECTIVE)
   
   // Timestamps
   createdAt      DateTime @default(now())
@@ -144,7 +144,7 @@ model Credential {
   aicteCompliant   Boolean  @default(false)
   
   // Status
-  status            CredentialStatus @default("active")
+  status            CredentialStatus @default(ACTIVE)
   revokedAt         DateTime?
   revocationReason  String?
   
@@ -257,7 +257,7 @@ model VerificationRequest {
   id                String   @id @default(cuid())
   credentialId      String
   verifierId        String
-  status            VerificationStatus @default("pending")
+  status            VerificationStatus @default(PENDING)
   
   // Verification details
   verificationMethod String?
